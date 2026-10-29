@@ -2,7 +2,8 @@
 # e.g. GitHub Actions windows-latest). The Store signs it when it's submitted.
 param([string]$Exe = "..\bin\Release\net48\HomeworkLaunchpad.exe", [string]$Version = "2.1.0.0")
 $ErrorActionPreference = "Stop"
-Set-Location $PSScriptRoot
+Push-Location $PSScriptRoot
+try {
 $id = Get-Content identity.json | ConvertFrom-Json
 Remove-Item -Recurse -Force layout, dist -ErrorAction SilentlyContinue
 New-Item -ItemType Directory layout\Assets, dist | Out-Null
@@ -22,3 +23,4 @@ Pop-Location
 & $kit.FullName pack /d layout /p dist\HomeworkLaunchpad.msix /o
 if ($LASTEXITCODE -ne 0) { throw "makeappx failed" }
 Get-Item dist\HomeworkLaunchpad.msix
+} finally { Pop-Location }

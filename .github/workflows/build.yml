@@ -85,11 +85,13 @@ jobs:
       - name: Pack the MSIX
         shell: pwsh
         run: |
+          $root = $PWD.Path; $log = Join-Path $root "out\msix.log"
           New-Item -ItemType Directory out -Force | Out-Null
-          try { & ./windows/msix/build-msix.ps1 -Exe "$PWD\windows\bin\Release\net48\HomeworkLaunchpad.exe" -Version "2.1.0.0" *>&1 | Tee-Object -FilePath out\msix.log }
+          try { & "$root\windows\msix\build-msix.ps1" -Exe "$PWD\windows\bin\Release\net48\HomeworkLaunchpad.exe" -Version "2.1.0.0" *>&1 | Tee-Object -FilePath $log }
           catch { Write-Output "::error::$($_.Exception.Message) at $($_.InvocationInfo.PositionMessage)" }
+          Set-Location $root
           if (!(Test-Path windows\msix\dist\HomeworkLaunchpad.msix)) {
-            if (Test-Path out\msix.log) { Get-Content out\msix.log -Tail 25 | ForEach-Object { Write-Output "::error::$_" } }
+            if (Test-Path $log) { Get-Content $log -Tail 25 | ForEach-Object { Write-Output "::error::$_" } }
             exit 1
           }
           Copy-Item windows\msix\dist\HomeworkLaunchpad.msix out\
