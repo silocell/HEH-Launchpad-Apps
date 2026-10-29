@@ -1,0 +1,55 @@
+dpkg-deb: building package 'homework-launchpad' in '/home/runner/work/HEH-Launchpad-Apps/HEH-Launchpad-Apps/out/homework-launchpad_2.0_amd64.deb'.
+appimagetool, continuous build (git version 854e19e), build 313 built on 2026-10-04 14:58:08 UTC
+WARNING: appstreamcli command is missing, please install it if you want to use AppStream metadata
+Using architecture x86_64
+WARNING: AppStream upstream metadata is missing, please consider creating it
+         in usr/share/metainfo/org.civilinitiatives.launchpad.appdata.xml
+         Please see https://www.freedesktop.org/software/appstream/docs/chap-Quickstart.html#sect-Quickstart-DesktopApps
+         for more information or use the generator at
+         https://docs.appimage.org/packaging-guide/optional/appstream.html#using-the-appstream-generator
+Generating squashfs...
+/home/runner/work/HEH-Launchpad-Apps/HEH-Launchpad-Apps/linux/build/AppDir should be packaged as /home/runner/work/HEH-Launchpad-Apps/HEH-Launchpad-Apps/out/HomeworkLaunchpad-x86_64.AppImage
+Downloading runtime file from https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64
+Downloaded runtime binary of size 944632
+Parallel mksquashfs: Using 4 processors
+Creating 4.0 filesystem on /home/runner/work/HEH-Launchpad-Apps/HEH-Launchpad-Apps/out/HomeworkLaunchpad-x86_64.AppImage, block size 131072.
+[===================================================================|] 5/5 100%
+
+Exportable Squashfs 4.0 filesystem, zstd compressed, data block size 131072
+	compressed data, compressed metadata, compressed fragments,
+	compressed xattrs, compressed ids
+	duplicates are removed
+Filesystem size 58.00 Kbytes (0.06 Mbytes)
+	46.68% of uncompressed filesystem size (124.24 Kbytes)
+Inode table size 106 bytes (0.10 Kbytes)
+	41.09% of uncompressed inode table size (258 bytes)
+Directory table size 140 bytes (0.14 Kbytes)
+	68.63% of uncompressed directory table size (204 bytes)
+Number of duplicate files found 1
+Number of inodes 8
+Number of files 5
+Number of fragments 1
+Number of symbolic links 0
+Number of device nodes 0
+Number of fifo nodes 0
+Number of socket nodes 0
+Number of directories 3
+Number of hard-links 0
+Number of ids (unique uids + gids) 1
+Number of uids 1
+	root (0)
+Number of gids 1
+	root (0)
+Embedding ELF...
+Marking the AppImage as executable...
+Embedding MD5 digest
+Success
+
+Please consider submitting your AppImage to AppImageHub, the crowd-sourced
+central directory of available AppImages, by opening a pull request
+at https://github.com/AppImage/appimage.github.io
+total 1052
+drwxr-xr-x  2 runner runner    4096 Oct 29 17:49 .
+drwxr-xr-x 10 runner runner    4096 Oct 29 17:49 ..
+-rwxr-xr-x  1 runner runner 1006072 Oct 29 17:49 HomeworkLaunchpad-x86_64.AppImage
+-rw-r--r--  1 runner runner   59362 Oct 29 17:49 homework-launchpad_2.0_amd64.deb
