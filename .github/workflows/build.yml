@@ -86,7 +86,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory out -Force | Out-Null
-          ./windows/msix/build-msix.ps1 -Exe "$PWD\windows\bin\Release\net48\HomeworkLaunchpad.exe" -Version "2.1.0.0"
+          ./windows/msix/build-msix.ps1 -Exe "$PWD\windows\bin\Release\net48\HomeworkLaunchpad.exe" -Version "2.1.0.0" *>&1 | Tee-Object -FilePath out\msix.log
           Copy-Item windows\msix\dist\HomeworkLaunchpad.msix out\
           Copy-Item windows\bin\Release\net48\HomeworkLaunchpad.exe out\HomeworkLaunchpad-ci.exe
       - uses: actions/upload-artifact@v4

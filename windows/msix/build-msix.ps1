@@ -13,8 +13,10 @@ Copy-Item Assets\* layout\Assets\
 $kit = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter makeappx.exe | Where-Object { $_.FullName -match "\\x64\\" } | Sort-Object FullName -Descending | Select-Object -First 1
 $pri = Join-Path $kit.DirectoryName "makepri.exe"
 Push-Location layout
-& $pri createconfig /cf priconfig.xml /dq en-GB /o | Out-Null
+& $pri createconfig /cf priconfig.xml /dq en-GB /pv 10.0.0 /o
+if ($LASTEXITCODE -ne 0) { throw "makepri createconfig failed" }
 & $pri new /pr . /cf priconfig.xml /of resources.pri /o
+if ($LASTEXITCODE -ne 0) { throw "makepri new failed" }
 Remove-Item priconfig.xml
 Pop-Location
 & $kit.FullName pack /d layout /p dist\HomeworkLaunchpad.msix /o
