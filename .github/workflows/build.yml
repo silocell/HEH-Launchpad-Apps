@@ -22,7 +22,7 @@ jobs:
           mkdir -p ../out ../logs
           xcodebuild -project HomeworkLaunchpad.xcodeproj -scheme HomeworkLaunchpad -configuration Release \
             -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath dd-ios \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tee ../logs/ios.log | tail -40
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tee ../logs/ios.log | tail -40 || { grep -E "error:" ../logs/ios.log | sort -u | head -25 | sed "s/^/::error::/"; exit 1; }
           APP=$(find dd-ios/Build/Products -name "HomeworkLaunchpad.app" -maxdepth 3 | head -1)
           mkdir -p Payload && cp -R "$APP" Payload/
           zip -qry ../out/HomeworkLaunchpad.ipa Payload
@@ -34,7 +34,7 @@ jobs:
           mkdir -p ../out ../logs
           xcodebuild -project HomeworkLaunchpad.xcodeproj -scheme HomeworkLaunchpad -configuration Release \
             -destination 'generic/platform=macOS,variant=Mac Catalyst' -derivedDataPath dd-mac \
-            ONLY_ACTIVE_ARCH=NO CODE_SIGN_IDENTITY="-" CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="" build 2>&1 | tee ../logs/mac.log | tail -40
+            ONLY_ACTIVE_ARCH=NO CODE_SIGN_IDENTITY="-" CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="" build 2>&1 | tee ../logs/mac.log | tail -40 || { grep -E "error:" ../logs/mac.log | sort -u | head -25 | sed "s/^/::error::/"; exit 1; }
           APP=$(find dd-mac/Build/Products -name "HomeworkLaunchpad.app" -maxdepth 3 | head -1)
           mkdir -p dmg && cp -R "$APP" "dmg/Homework Launchpad.app" && ln -s /Applications dmg/Applications
           codesign --force --deep -s - "dmg/Homework Launchpad.app"
@@ -60,10 +60,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - uses: snapcore/action-build@v1
-        id: snap
-        with: { path: linux }
-      - run: mkdir -p out && cp "${{ steps.snap.outputs.snap }}" out/homework-launchpad_2.0_amd64.snap
+      - name: Snapcraft
+        working-directory: linux
+        run: |
+          sudo snap install snapcraft --classic
+          sudo snapcraft --destructive-mode --verbosity=verbose 2>&1 | tail -60 || { echo "::error::snapcraft failed"; exit 1; }
+          mkdir -p ../out && cp *.snap ../out/homework-launchpad_2.0_amd64.snap
       - name: Snap logs
         if: failure()
         run: mkdir -p snaplogs && sudo find / -path /proc -prune -o -name "snapcraft*.log" -print 2>/dev/null | head -5 | while read f; do sudo cp "$f" snaplogs/ ; done; sudo chmod -R a+r snaplogs; ls -la snaplogs
