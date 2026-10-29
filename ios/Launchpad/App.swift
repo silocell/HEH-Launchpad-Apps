@@ -2,8 +2,8 @@
 // © 2026 silocell. All rights reserved.
 //
 // The Launchpad itself is shown in the app's own web view - same pages,
-// same design as the website. Rocket Rush is written natively in SpriteKit
-// (RushScene.swift): richer on iPad and Mac, lighter on iPhone.
+// same design as the website. Rocket Rush is written natively
+// in 3D with SceneKit (RushGame.swift): richer on iPad and Mac, lighter on iPhone.
 import SwiftUI
 
 @main

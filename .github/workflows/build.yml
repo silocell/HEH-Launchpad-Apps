@@ -64,6 +64,12 @@ jobs:
         id: snap
         with: { path: linux }
       - run: mkdir -p out && cp "${{ steps.snap.outputs.snap }}" out/homework-launchpad_2.0_amd64.snap
+      - name: Snap logs
+        if: failure()
+        run: mkdir -p snaplogs && sudo find / -path /proc -prune -o -name "snapcraft*.log" -print 2>/dev/null | head -5 | while read f; do sudo cp "$f" snaplogs/ ; done; sudo chmod -R a+r snaplogs; ls -la snaplogs
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: snaplogs, path: snaplogs/, if-no-files-found: ignore }
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: snap, path: out/, if-no-files-found: ignore }
