@@ -16,7 +16,7 @@
     <Product>Homework Launchpad</Product>
     <AssemblyTitle>Homework Launchpad</AssemblyTitle>
     <Company>Homework Launchpad</Company>
-    <Version>2.0.2</Version>
+    <Version>2.1.0</Version>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
     <ApplicationManifest>app.manifest</ApplicationManifest>

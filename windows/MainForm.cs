@@ -49,6 +49,7 @@ namespace Launchpad
             Controls.Add(web);
             Load += async (s, e) => await Start();
             KeyDown += (s, e) => { if (e.KeyCode == Keys.F11) ToggleFull(); };
+            FormClosed += (s, e) => Updater.OnExit();
             ListenForLinks();
         }
 
@@ -107,6 +108,7 @@ namespace Launchpad
                 if (e.TryGetWebMessageAsString() == "retry") core.Navigate(HomeUrl);
             };
             if (!HandleLink(startLink)) core.Navigate(HomeUrl);
+            Updater.CheckLater(this);
         }
 
         static bool IsOurs(Uri u)
