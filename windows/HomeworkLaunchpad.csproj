@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Homework Launchpad for Windows: a native C# app (.NET Framework 4.8,
+       built into every Windows 10 and 11 PC, so nothing extra to install)
+       showing the Launchpad in Microsoft's WebView2. One small EXE: the
+       WebView2 libraries are packed inside it and unpacked on first run. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ApplicationIcon>launchpad.ico</ApplicationIcon>
+    <AssemblyName>HomeworkLaunchpad</AssemblyName>
+    <RootNamespace>Launchpad</RootNamespace>
+    <Product>Homework Launchpad</Product>
+    <AssemblyTitle>Homework Launchpad</AssemblyTitle>
+    <Company>Homework Launchpad</Company>
+    <Version>2.0.2</Version>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
+  </ItemGroup>
+  <!-- pack the WebView2 libraries into the EXE -->
+  <Target Name="EmbedWebView2" AfterTargets="ResolveAssemblyReferences" BeforeTargets="PrepareForBuild;CoreCompile">
+    <PropertyGroup>
+      <WV2Dir>$(NuGetPackageRoot)microsoft.web.webview2/1.0.4314.35/</WV2Dir>
+    </PropertyGroup>
+    <ItemGroup>
+      <EmbeddedResource Include="$(WV2Dir)lib/net462/Microsoft.Web.WebView2.Core.dll" LogicalName="lib.Microsoft.Web.WebView2.Core.dll" />
+      <EmbeddedResource Include="$(WV2Dir)lib/net462/Microsoft.Web.WebView2.WinForms.dll" LogicalName="lib.Microsoft.Web.WebView2.WinForms.dll" />
+      <EmbeddedResource Include="$(WV2Dir)runtimes/win-x64/native/WebView2Loader.dll" LogicalName="native.x64.WebView2Loader.dll" />
+      <EmbeddedResource Include="$(WV2Dir)runtimes/win-x86/native/WebView2Loader.dll" LogicalName="native.x86.WebView2Loader.dll" />
+      <EmbeddedResource Include="$(WV2Dir)runtimes/win-arm64/native/WebView2Loader.dll" LogicalName="native.arm64.WebView2Loader.dll" />
+    </ItemGroup>
+  </Target>
+</Project>

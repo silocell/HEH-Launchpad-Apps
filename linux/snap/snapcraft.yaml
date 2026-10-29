@@ -1,0 +1,30 @@
+name: homework-launchpad
+base: core22
+version: '2.0'
+summary: Homework Launchpad
+description: |
+  Your homework, learning games, shop and Rocket Rush - the Homework
+  Launchpad in its own window.
+grade: stable
+confinement: strict
+license: Proprietary
+icon: data/org.civilinitiatives.launchpad.png
+apps:
+  homework-launchpad:
+    command: usr/bin/homework-launchpad
+    desktop: usr/share/applications/org.civilinitiatives.launchpad.desktop
+    common-id: org.civilinitiatives.launchpad
+    extensions: [gnome]
+    plugs: [network, network-status, opengl, audio-playback, home]
+parts:
+  launchpad:
+    plugin: nil
+    source: .
+    build-packages: [gcc, pkg-config]
+    override-build: |
+      gcc main.c $(pkg-config --cflags --libs webkit2gtk-4.1) -O2 -o homework-launchpad
+      install -Dm755 homework-launchpad $CRAFT_PART_INSTALL/usr/bin/homework-launchpad
+      install -Dm644 data/org.civilinitiatives.launchpad.png $CRAFT_PART_INSTALL/usr/share/icons/hicolor/256x256/apps/org.civilinitiatives.launchpad.png
+      sed 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/256x256/apps/org.civilinitiatives.launchpad.png|' \
+        data/org.civilinitiatives.launchpad.desktop > desk
+      install -Dm644 desk $CRAFT_PART_INSTALL/usr/share/applications/org.civilinitiatives.launchpad.desktop

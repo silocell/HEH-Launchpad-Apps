@@ -1,0 +1,11 @@
+Copyright (c) 2026 silocell. All rights reserved.
+
+This repository and everything in it (the Homework Launchpad apps for
+Android, iPhone/iPad, Mac, Windows and Linux, their source code, artwork
+and builds) is proprietary. No permission is granted to copy, modify,
+distribute, sublicense or sell any part of it, or to use it to make other
+software, without the written permission of the copyright holder.
+
+Third-party parts keep their own licences: Microsoft WebView2 (Windows),
+WebKitGTK (Linux), Android Jetpack libraries (Android) and Twemoji artwork
+(CC-BY 4.0) used for the rocket in the app icon.

@@ -1,0 +1,87 @@
+name: Build apps
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apple:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools
+        run: brew install xcodegen
+      - name: Project
+        working-directory: ios
+        run: xcodegen generate
+      - name: iPhone / iPad (unsigned IPA)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          mkdir -p ../out ../logs
+          xcodebuild -project HomeworkLaunchpad.xcodeproj -scheme HomeworkLaunchpad -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath dd-ios \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tee ../logs/ios.log | tail -40
+          APP=$(find dd-ios/Build/Products -name "HomeworkLaunchpad.app" -maxdepth 3 | head -1)
+          mkdir -p Payload && cp -R "$APP" Payload/
+          zip -qry ../out/HomeworkLaunchpad.ipa Payload
+      - name: Mac (Catalyst, ad-hoc signed DMG)
+        if: always()
+        working-directory: ios
+        run: |
+          set -o pipefail
+          mkdir -p ../out ../logs
+          xcodebuild -project HomeworkLaunchpad.xcodeproj -scheme HomeworkLaunchpad -configuration Release \
+            -destination 'generic/platform=macOS,variant=Mac Catalyst' -derivedDataPath dd-mac \
+            ONLY_ACTIVE_ARCH=NO CODE_SIGN_IDENTITY="-" CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="" build 2>&1 | tee ../logs/mac.log | tail -40
+          APP=$(find dd-mac/Build/Products -name "HomeworkLaunchpad.app" -maxdepth 3 | head -1)
+          mkdir -p dmg && cp -R "$APP" "dmg/Homework Launchpad.app" && ln -s /Applications dmg/Applications
+          codesign --force --deep -s - "dmg/Homework Launchpad.app"
+          hdiutil create -volname "Homework Launchpad" -srcfolder dmg -ov -format UDZO ../out/HomeworkLaunchpad.dmg
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: apple, path: "out/\nlogs/", if-no-files-found: ignore }
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Packages
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libfuse2 file
+      - name: deb + AppImage
+        run: |
+          set -o pipefail
+          mkdir -p logs
+          OUT=$PWD/out sh linux/package.sh 2>&1 | tee logs/linux.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: linux, path: "out/\nlogs/", if-no-files-found: ignore }
+  snap:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: snapcore/action-build@v1
+        id: snap
+        with: { path: linux }
+      - run: mkdir -p out && cp "${{ steps.snap.outputs.snap }}" out/homework-launchpad_2.0_amd64.snap
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: snap, path: out/, if-no-files-found: ignore }
+  publish:
+    needs: [apple, linux, snap]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: got }
+      - name: Push to the builds branch
+        run: |
+          mkdir pub && cd pub
+          git init -q -b builds
+          find ../got -type f \( -path "*/out/*" -o -path "*/logs/*" \) -exec cp {} . \;
+          find ../got -maxdepth 2 -type f -exec cp {} . \; || true
+          echo "Run ${{ github.run_id }} for ${{ github.sha }}: apple=${{ needs.apple.result }} linux=${{ needs.linux.result }} snap=${{ needs.snap.result }}" > STATUS.txt
+          ls -la
+          git config user.name "build bot"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -qm "Builds for ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" builds

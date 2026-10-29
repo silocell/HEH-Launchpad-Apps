@@ -1,0 +1,27 @@
+plugins { id "com.android.application"; id "org.jetbrains.kotlin.android" }
+def ks = new Properties()
+def ksFile = rootProject.file("keys/keystore.properties")
+if (ksFile.exists()) ks.load(new FileInputStream(ksFile))
+android {
+  namespace "org.civilinitiatives.launchpad"
+  compileSdk 34
+  defaultConfig {
+    applicationId "org.civilinitiatives.launchpad"
+    minSdk 23
+    targetSdk 34
+    versionCode 4
+    versionName "2.0.2"
+  }
+  signingConfigs {
+    release {
+      storeFile rootProject.file("keys/launchpad-release.jks")
+      storePassword ks["storePassword"]
+      keyAlias ks["keyAlias"]
+      keyPassword ks["keyPassword"]
+    }
+  }
+  buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+  kotlinOptions { jvmTarget = "17" }
+}
+dependencies { implementation "androidx.browser:browser:1.8.0" }

@@ -1,0 +1,46 @@
+name: HomeworkLaunchpad
+options:
+  bundleIdPrefix: org.civilinitiatives
+  deploymentTarget:
+    iOS: "15.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "2.0"
+    CURRENT_PROJECT_VERSION: "2"
+targets:
+  HomeworkLaunchpad:
+    type: application
+    platform: iOS
+    sources: [Launchpad]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.civilinitiatives.launchpad
+        PRODUCT_NAME: HomeworkLaunchpad
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SUPPORTS_MACCATALYST: YES
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Launchpad/Info.plist
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: ""
+    info:
+      path: Launchpad/Info.plist
+      properties:
+        CFBundleDisplayName: Launchpad
+        CFBundleShortVersionString: "2.0"
+        CFBundleVersion: "2"
+        LSRequiresIPhoneOS: true
+        UILaunchScreen:
+          UIColorName: ""
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        NSPhotoLibraryUsageDescription: "Choose a photo to use as your Launchpad picture."
+        NSCameraUsageDescription: "Take a photo to use as your Launchpad picture."
+        NSHumanReadableCopyright: "© 2026 silocell. All rights reserved."
+        CFBundleURLTypes:
+          - CFBundleURLName: org.civilinitiatives.launchpad
+            CFBundleURLSchemes: [hehlaunchpad]
+        ITSAppUsesNonExemptEncryption: false

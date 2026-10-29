@@ -1,0 +1,14 @@
+# never commit signing keys or passwords
+keys/
+*.jks
+*.keystore
+keystore.properties
+local.properties
+# build output
+build/
+.gradle/
+bin/
+obj/
+*.xcodeproj/
+DerivedData/
+out/

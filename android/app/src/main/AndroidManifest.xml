@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Homework Launchpad for Android, written in Kotlin.
+     MainActivity shows the Launchpad in the app's own web view (same
+     design as the website). GameActivity is Rocket Rush, written natively. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.VIBRATE" />
+  <application
+      android:label="@string/app_name"
+      android:icon="@mipmap/ic_launcher"
+      android:roundIcon="@mipmap/ic_launcher"
+      android:allowBackup="false"
+      android:supportsRtl="true"
+      android:hardwareAccelerated="true"
+      android:theme="@style/Launchpad">
+    <activity
+        android:name=".MainActivity"
+        android:exported="true"
+        android:launchMode="singleTask"
+        android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|uiMode">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+      <!-- the sign-in coming back from the browser -->
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="hehlaunchpad" android:host="login" />
+      </intent-filter>
+      <!-- Launchpad links open in the app -->
+      <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="https" android:host="civilinitiatives.org" />
+      </intent-filter>
+    </activity>
+    <activity
+        android:name=".GameActivity"
+        android:exported="false"
+        android:screenOrientation="sensorLandscape"
+        android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+        android:theme="@style/Launchpad.Game" />
+  </application>
+  <queries>
+    <intent><action android:name="android.support.customtabs.action.CustomTabsService" /></intent>
+    <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" /></intent>
+  </queries>
+</manifest>

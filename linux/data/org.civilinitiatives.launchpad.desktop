@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Homework Launchpad
+Comment=Your homework, learning games and shop
+Exec=homework-launchpad %u
+Icon=org.civilinitiatives.launchpad
+Terminal=false
+Categories=Education;
+MimeType=x-scheme-handler/hehlaunchpad;
+StartupWMClass=homework-launchpad
