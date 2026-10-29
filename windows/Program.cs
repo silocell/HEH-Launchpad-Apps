@@ -35,7 +35,7 @@ namespace Launchpad
                 if (!first) { SendToFirst(link); return; }
                 AppDomain.CurrentDomain.AssemblyResolve += LoadEmbedded;
                 Directory.CreateDirectory(Home);
-                RegisterProtocol();
+                if (!Updater.FromStore) RegisterProtocol();   // the Store copy declares it in its package instead
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 Run(link);

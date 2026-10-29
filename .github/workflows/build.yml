@@ -75,8 +75,25 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: snap, path: out/, if-no-files-found: ignore }
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the EXE
+        working-directory: windows
+        run: dotnet build -c Release
+      - name: Pack the MSIX
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory out -Force | Out-Null
+          ./windows/msix/build-msix.ps1 -Exe "$PWD\windows\bin\Release\net48\HomeworkLaunchpad.exe" -Version "2.1.0.0"
+          Copy-Item windows\msix\dist\HomeworkLaunchpad.msix out\
+          Copy-Item windows\bin\Release\net48\HomeworkLaunchpad.exe out\HomeworkLaunchpad-ci.exe
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: windows, path: out/, if-no-files-found: ignore }
   publish:
-    needs: [apple, linux, snap]
+    needs: [apple, linux, snap, windows]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -88,7 +105,7 @@ jobs:
           git init -q -b builds
           find ../got -type f \( -path "*/out/*" -o -path "*/logs/*" \) -exec cp {} . \;
           find ../got -maxdepth 2 -type f -exec cp {} . \; || true
-          echo "Run ${{ github.run_id }} for ${{ github.sha }}: apple=${{ needs.apple.result }} linux=${{ needs.linux.result }} snap=${{ needs.snap.result }}" > STATUS.txt
+          echo "Run ${{ github.run_id }} for ${{ github.sha }}: apple=${{ needs.apple.result }} linux=${{ needs.linux.result }} snap=${{ needs.snap.result }} windows=${{ needs.windows.result }}" > STATUS.txt
           ls -la
           git config user.name "build bot"; git config user.email "actions@users.noreply.github.com"
           git add -A && git commit -qm "Builds for ${{ github.sha }}"

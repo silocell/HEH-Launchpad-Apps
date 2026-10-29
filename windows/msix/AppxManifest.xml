@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Homework Launchpad for the Microsoft Store (MSIX). The Identity values
+     come from Partner Center (Product identity page) and are filled in by
+     the build from msix/identity.json. -->
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+         IgnorableNamespaces="uap rescap">
+  <Identity Name="__NAME__" Publisher="__PUBLISHER__" Version="__VERSION__" ProcessorArchitecture="neutral" />
+  <Properties>
+    <DisplayName>Homework Launchpad</DisplayName>
+    <PublisherDisplayName>__PUBDISPLAY__</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Homework, learning games, the shop and Rocket Rush 3D.</Description>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+  <Resources>
+    <Resource Language="en-gb" />
+  </Resources>
+  <Applications>
+    <Application Id="HomeworkLaunchpad" Executable="HomeworkLaunchpad.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="Homework Launchpad" Description="Homework, learning games, the shop and Rocket Rush 3D."
+                          BackgroundColor="#3730A3" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" ShortName="Launchpad" />
+      </uap:VisualElements>
+      <Extensions>
+        <!-- Google sign-in comes back to the app through hehlaunchpad://login -->
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="hehlaunchpad">
+            <uap:DisplayName>Homework Launchpad</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
