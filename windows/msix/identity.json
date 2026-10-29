@@ -1,6 +1,6 @@
 {
-  "_note": "Copy these three from Partner Center > your app > Product management > Product identity. Until then the placeholders build a package you can't submit.",
-  "name": "silocell.HomeworkLaunchpad",
-  "publisher": "CN=00000000-0000-0000-0000-000000000000",
-  "publisherDisplayName": "silocell"
+  "_note": "From Partner Center > Homework Launchpad > Product identity (Store ID 9PP8DSFDGSGD). Package family name: ShivKumar.HomeworkLaunchpad_f6cyksxrgyjda",
+  "name": "ShivKumar.HomeworkLaunchpad",
+  "publisher": "CN=354CC6B1-20C8-41C1-BA85-D4F5E97D5991",
+  "publisherDisplayName": "Shiv Kumar"
 }
