@@ -35,7 +35,8 @@ final class RushModel: ObservableObject {
     @Published var hudTime = "⏱️ …"
     @Published var hudTimeLow = false
     @Published var hintOn = false
-    @Published var bannerSmall = "", bannerBig = ""
+    @Published var bannerSmall = ""
+    @Published var bannerBig = ""
     @Published var bannerColor = Color.white
     @Published var bannerOn = false
     @Published var popText = ""
