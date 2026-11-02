@@ -1,0 +1,28 @@
+plugins { id "com.android.application"; id "org.jetbrains.kotlin.android" }
+def ks = new Properties()
+def ksFile = file(System.getenv("LG_KEYS") ?: "../../keys/keystore.properties")
+if (ksFile.exists()) ks.load(new FileInputStream(ksFile))
+android {
+  namespace "org.civilinitiatives.launchpadgames"
+  compileSdk 34
+  defaultConfig {
+    applicationId "org.civilinitiatives.launchpadgames"
+    minSdk 23
+    // 29, so the APK can be signed the older way (v1). The Game Maker adds
+    // each game to the APK's zip comment, which v1 signing doesn't cover.
+    targetSdk 29
+    versionCode 1
+    versionName "1.0.0"
+  }
+  signingConfigs {
+    release {
+      storeFile ks["storeFile"] ? file(ks["storeFile"]) : null
+      storePassword ks["storePassword"]; keyAlias ks["keyAlias"]; keyPassword ks["keyPassword"]
+      enableV1Signing true; enableV2Signing false; enableV3Signing false; enableV4Signing false
+    }
+  }
+  buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+  kotlinOptions { jvmTarget = "17" }
+  lint { checkReleaseBuilds false; abortOnError false }
+}
