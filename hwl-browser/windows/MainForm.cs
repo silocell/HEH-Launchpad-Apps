@@ -20,7 +20,7 @@ namespace HwlBrowser
     {
         const string CheckUrl = "https://hehs-live.duckdns.org/functions/v1/linkcheck";
         const string AnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyODMyMjkwLCJleHAiOjIxMDgxOTIyOTB9.7gFhQa5RBwVtiOPLO7Qf2-aVEbkd5xgpLiN1J06Gybo";
-        static readonly Regex Trusted = new Regex(@"(^|\.)(wikipedia\.org|wikimedia\.org|bbc\.co\.uk|civilinitiatives\.org|chausima\.com|kiddle\.co|nasa\.gov|nhm\.ac\.uk|britannica\.com|natgeokids\.com|mathsisfun\.com|gov\.uk|scratch\.mit\.edu|khanacademy\.org|developer\.mozilla\.org|w3schools\.com|duckdns\.org)$", RegexOption.IgnoreCase);
+        static readonly Regex Trusted = new Regex(@"(^|\.)(wikipedia\.org|wikimedia\.org|bbc\.co\.uk|civilinitiatives\.org|chausima\.com|kiddle\.co|nasa\.gov|nhm\.ac\.uk|britannica\.com|natgeokids\.com|mathsisfun\.com|gov\.uk|scratch\.mit\.edu|khanacademy\.org|developer\.mozilla\.org|w3schools\.com|duckdns\.org)$", RegexOptions.IgnoreCase);
 
         readonly string loaderDir;
         readonly WebView2 web = new WebView2();
