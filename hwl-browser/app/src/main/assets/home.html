@@ -14,7 +14,8 @@ h1{font-size:30px;margin:6px 0 18px;letter-spacing:-.02em}
 form{display:flex;gap:8px}
 input[type=search]{flex:1;min-width:0;height:48px;border-radius:999px;border:1px solid var(--line);background:var(--card);padding:0 18px;font-size:16px;color:var(--ink);outline:0}
 input[type=search]:focus{border-color:var(--blue)}
-button{height:48px;padding:0 18px;border:0;border-radius:999px;background:var(--blue);color:#fff;font-weight:700;font-size:15px}
+button,.aim{height:48px;padding:0 18px;border:0;border-radius:999px;background:var(--blue);color:#fff;font-weight:700;font-size:15px}
+.aim{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:#fff;font-weight:700;font-size:15px;border-radius:999px;padding:0 18px;background:linear-gradient(135deg,#3b6cf0,#9b4de0)}
 .opt{margin:12px 0 0;font-size:14px;color:var(--soft)}
 .quick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:28px}
 .quick a{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border-radius:14px;color:var(--ink);text-decoration:none;font-size:13px}
@@ -27,6 +28,7 @@ button{height:48px;padding:0 18px;border:0;border-radius:999px;background:var(--
 .res a{display:block;padding:10px 4px;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
 .res b{display:block;color:var(--blue);font-size:17px;font-weight:600}
 .res small{display:block;color:var(--green);font-size:12px;margin:2px 0 3px;word-break:break-all}
+.res a.aim{display:inline-flex;height:38px;margin:0 0 10px;border:0;padding:0 16px}
 .res span{color:var(--soft);font-size:14px}
 </style>
 </head>
@@ -41,20 +43,23 @@ function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&
 function strip(h) { var d = document.createElement("div"); d.innerHTML = String(h || ""); return d.textContent; }
 var app = document.getElementById("app");
 function q() { var h = location.hash; return h.indexOf("#q=") === 0 ? decodeURIComponent(h.slice(3)) : ""; }
+function aiUrl(t) { return "https://hwlai.civilinitiatives.org/" + (t ? "#q=" + encodeURIComponent(t.slice(0, 500)) : ""); }
 function search(text) { location.hash = "q=" + encodeURIComponent(text); }
 function home() {
   app.innerHTML = '<div class="home"><div class="logo"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"><path d="M12 9v22M28 9v22M12 20h16"/></svg></div>' +
     '<h1>HWL Search</h1><form><input type="search" placeholder="What do you want to find out?" aria-label="Search" enterkeyhint="search"><button>Search</button></form>' +
+    '<p style="margin:12px 0 0"><a class="aim" id="aim" href="' + aiUrl("") + '">✨ AI Mode</a></p>' +
     '<p class="opt"><label><input type="checkbox"' + (simple ? " checked" : "") + '> Simple English Wikipedia (easier to read)</label></p>' +
     '<div class="quick">' + QUICK.map(function (x) { return '<a href="' + x[2] + '"><i>' + x[0] + "</i>" + esc(x[1]) + "</a>"; }).join("") + "</div>" +
     '<p class="note">Every website is checked to make sure it\'s OK for school before it opens.</p></div>';
   var box = app.querySelector("input[type=search]");
+  app.querySelector("#aim").onclick = function (e) { var t = box.value.trim(); if (t) { e.preventDefault(); location.href = aiUrl(t); } };
   app.querySelector("form").onsubmit = function (e) { e.preventDefault(); if (box.value.trim()) search(box.value.trim()); };
   app.querySelector(".opt input").onchange = function () { simple = this.checked; try { localStorage.setItem("simple", simple ? "1" : "0"); } catch (e) {} };
 }
 function results(text) {
   var host = simple ? "simple" : "en";
-  app.innerHTML = '<div class="res"><p class="hd">Searching for “' + esc(text) + '”…</p><div class="web"></div><div class="vid"></div><div class="wiki"></div></div>';
+  app.innerHTML = '<div class="res"><a class="aim" href="' + esc(aiUrl(text)) + '">✨ Ask HWLAI (AI Mode)</a><p class="hd">Searching for “' + esc(text) + '”…</p><div class="web"></div><div class="vid"></div><div class="wiki"></div></div>';
   var box = app.querySelector(".res"), found = 0, done = 0;
   function finish() { if (++done < 3) return; box.querySelector(".hd").textContent = found ? "Results for “" + text + "”" : "Nothing found for “" + text + "”. Try different words."; }
   function sec(cls, name) { var s = box.querySelector("." + cls); s.innerHTML = '<p class="sec">' + name + "</p>"; return s; }

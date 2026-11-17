@@ -45,8 +45,17 @@ class MainActivity : Activity() {
     private val trusted = Regex(
         "(^|\\.)(wikipedia\\.org|wikimedia\\.org|bbc\\.co\\.uk|civilinitiatives\\.org|chausima\\.com|kiddle\\.co|nasa\\.gov|" +
             "nhm\\.ac\\.uk|britannica\\.com|natgeokids\\.com|mathsisfun\\.com|gov\\.uk|scratch\\.mit\\.edu|khanacademy\\.org|" +
-            "developer\\.mozilla\\.org|w3schools\\.com|duckdns\\.org)$", RegexOption.IGNORE_CASE
+            "developer\\.mozilla\\.org|w3schools\\.com|duckdns\\.org|" +
+            "youtube\\.com|youtu\\.be|youtube-nocookie\\.com|google\\.com|google\\.co\\.uk|office\\.com|microsoft365\\.com|office365\\.com|live\\.com|microsoftonline\\.com|sharepoint\\.com|onedrive\\.com|microsoft\\.com|cloud\\.microsoft|github\\.com|" +
+            "sparx-learning\\.com|sparxmaths\\.uk|sparxreader\\.com|sparxmaths\\.com|educake\\.co\\.uk|senecalearning\\.com|arbor\\.sc|arbor-education\\.com|wiktionary\\.org)$", RegexOption.IGNORE_CASE
     )
+    private val tube = Regex("(^|\\.)(youtube\\.com|youtu\\.be|youtube-nocookie\\.com)$", RegexOption.IGNORE_CASE)
+    private val googleSearch = Regex("(^|\\.)google\\.(com|co\\.uk)$", RegexOption.IGNORE_CASE)
+    /** A single YouTube video: checked by the AI (judged like a "15" rating) even though YouTube itself is trusted. */
+    private fun isVideo(u: Uri): Boolean {
+        val h = (u.host ?: "").lowercase(); val p = u.path ?: ""
+        return tube.containsMatchIn(h) && (h.endsWith("youtu.be") || Regex("^/(watch|shorts/|embed/|live/)").containsMatchIn(p))
+    }
     private val okUrls = HashSet<String>()          // pages already passed this session
     private val badHosts = HashMap<String, String>() // websites already blocked, and why
 
@@ -125,8 +134,32 @@ class MainActivity : Activity() {
                 return !allowedNow(r.url.toString())
             }
             override fun onPageStarted(v: WebView, url: String, f: android.graphics.Bitmap?) { showAddress(url) }
+            // YouTube changes video without loading a new page: check those too
+            override fun doUpdateVisitedHistory(v: WebView, url: String, reload: Boolean) {
+                if (isVideo(Uri.parse(url)) && url !in okUrls && cover.visibility != View.VISIBLE) {
+                    v.loadUrl("about:blank"); checkThenOpen(url, (Uri.parse(url).host ?: "").lowercase())
+                }
+            }
         }
-        if (saved != null) web.restoreState(saved) else web.loadUrl(home)
+        if (saved != null) web.restoreState(saved) else if (!openLink(intent?.data)) web.loadUrl(home)
+    }
+
+    override fun onNewIntent(i: android.content.Intent) { super.onNewIntent(i); openLink(i.data) }
+
+    /** net.chausima.com/?q=words searches, ?u=address opens a website (after the usual check), and
+     *  hwlbrowser://open?q=... or ?u=... do the same. */
+    private fun openLink(d: Uri?): Boolean {
+        if (d == null) return false
+        val ok = (d.scheme == "hwlbrowser") || (d.scheme == "https" && d.host == "net.chausima.com")
+        if (!ok) return false
+        val q = d.getQueryParameter("q")?.trim().orEmpty()
+        val u = d.getQueryParameter("u")?.trim().orEmpty()
+        when {
+            u.isNotEmpty() -> open(if (Regex("^https?://", RegexOption.IGNORE_CASE).containsMatchIn(u)) u else "https://$u")
+            q.isNotEmpty() -> web.loadUrl(home + "#q=" + URLEncoder.encode(q, "UTF-8").replace("+", "%20"))
+            else -> web.loadUrl(home)
+        }
+        return true
     }
 
     override fun onSaveInstanceState(out: Bundle) { super.onSaveInstanceState(out); web.saveState(out) }
@@ -164,7 +197,12 @@ class MainActivity : Activity() {
         if (url.startsWith(home) || url.startsWith("file:///android_asset/") || scheme == "about" || scheme == "data") return true
         if (scheme != "https" && scheme != "http") { blocked(url, "HWL Browser only opens web pages."); return false }
         val host = (u.host ?: "").lowercase()
-        if (trusted.containsMatchIn(host) || url in okUrls) return true
+        if (url in okUrls) return true
+        if (googleSearch.containsMatchIn(host) && u.path == "/search" && u.getQueryParameter("safe") != "active") {
+            web.loadUrl(url + (if (url.contains('?')) "&" else "?") + "safe=active"); return false   // Google SafeSearch on
+        }
+        if (isVideo(u)) { checkThenOpen(url, host); return false }
+        if (trusted.containsMatchIn(host)) return true
         badHosts[host]?.let { blocked(url, it); return false }
         checkThenOpen(url, host)
         return false
@@ -183,7 +221,7 @@ class MainActivity : Activity() {
                     setRequestProperty("Authorization", "Bearer " + BuildConfig.ANON_KEY)
                     setRequestProperty("x-hwl-app", "hwl-browser/1.0")
                 }
-                c.outputStream.use { it.write(JSONObject().put("url", url).toString().toByteArray()) }
+                c.outputStream.use { it.write(JSONObject().put("url", url).put("age", 15).toString().toByteArray()) }
                 val body = (if (c.responseCode < 400) c.inputStream else c.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
                 val j = JSONObject(body)
                 ok = j.optBoolean("ok", false)
@@ -193,7 +231,7 @@ class MainActivity : Activity() {
                 cover.visibility = View.GONE
                 if (ok) { okUrls.add(url); web.loadUrl(url) }
                 else {
-                    if (why.contains("isn't suitable")) badHosts[host] = why
+                    if (why.contains("isn't suitable") && !isVideo(Uri.parse(url))) badHosts[host] = why
                     blocked(url, why)
                 }
             }

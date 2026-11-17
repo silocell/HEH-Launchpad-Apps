@@ -20,7 +20,11 @@ namespace HwlBrowser
     {
         const string CheckUrl = "https://hehs-live.duckdns.org/functions/v1/linkcheck";
         const string AnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyODMyMjkwLCJleHAiOjIxMDgxOTIyOTB9.7gFhQa5RBwVtiOPLO7Qf2-aVEbkd5xgpLiN1J06Gybo";
-        static readonly Regex Trusted = new Regex(@"(^|\.)(wikipedia\.org|wikimedia\.org|bbc\.co\.uk|civilinitiatives\.org|chausima\.com|kiddle\.co|nasa\.gov|nhm\.ac\.uk|britannica\.com|natgeokids\.com|mathsisfun\.com|gov\.uk|scratch\.mit\.edu|khanacademy\.org|developer\.mozilla\.org|w3schools\.com|duckdns\.org)$", RegexOptions.IgnoreCase);
+        static readonly Regex Trusted = new Regex(@"(^|\.)(wikipedia\.org|wikimedia\.org|bbc\.co\.uk|civilinitiatives\.org|chausima\.com|kiddle\.co|nasa\.gov|nhm\.ac\.uk|britannica\.com|natgeokids\.com|mathsisfun\.com|gov\.uk|scratch\.mit\.edu|khanacademy\.org|developer\.mozilla\.org|w3schools\.com|duckdns\.org|youtube\.com|youtu\.be|youtube-nocookie\.com|google\.com|google\.co\.uk|office\.com|microsoft365\.com|office365\.com|live\.com|microsoftonline\.com|sharepoint\.com|onedrive\.com|microsoft\.com|cloud\.microsoft|github\.com|sparx-learning\.com|sparxmaths\.uk|sparxreader\.com|sparxmaths\.com|educake\.co\.uk|senecalearning\.com|arbor\.sc|arbor-education\.com|wiktionary\.org)$", RegexOptions.IgnoreCase);
+        static readonly Regex Tube = new Regex(@"(^|\.)(youtube\.com|youtu\.be|youtube-nocookie\.com)$", RegexOptions.IgnoreCase);
+        static readonly Regex GoogleSearch = new Regex(@"(^|\.)google\.(com|co\.uk)$", RegexOptions.IgnoreCase);
+        // a single YouTube video: checked by the AI (judged like a "15" rating) even though YouTube itself is trusted
+        static bool IsVideo(Uri u) { var h = u.Host.ToLowerInvariant(); return Tube.IsMatch(h) && (h.EndsWith("youtu.be") || Regex.IsMatch(u.AbsolutePath, "^/(watch|shorts/|embed/|live/)")); }
 
         readonly string loaderDir;
         readonly WebView2 web = new WebView2();
@@ -94,9 +98,35 @@ namespace HwlBrowser
             core.Settings.AreDevToolsEnabled = false;
             core.NavigationStarting += (s, e) => { if (!AllowedNow(e.Uri)) e.Cancel = true; };
             core.NewWindowRequested += (s, e) => { e.Handled = true; if (AllowedNow(e.Uri)) core.Navigate(e.Uri); };
-            core.SourceChanged += (s, e) => ShowAddress(core.Source);
+            core.SourceChanged += (s, e) =>
+            {
+                ShowAddress(core.Source);
+                // YouTube changes video without loading a new page: check those too
+                Uri su;
+                if (!cover.Visible && Uri.TryCreate(core.Source, UriKind.Absolute, out su) && IsVideo(su) && !okUrls.Contains(core.Source))
+                { var src = core.Source; core.NavigateToString("<!doctype html><body></body>"); CheckThenOpen(src, su.Host.ToLowerInvariant()); }
+            };
             core.DocumentTitleChanged += (s, e) => Text = (string.IsNullOrEmpty(core.DocumentTitle) ? "" : core.DocumentTitle + " - ") + "HWL Browser";
-            core.Navigate(homeUrl);
+            if (!OpenLink(Program.StartLink)) core.Navigate(homeUrl);
+        }
+
+        // hwlbrowser://open?q=words searches, ?u=address opens a website (after the usual check)
+        bool OpenLink(string link)
+        {
+            Uri d;
+            if (string.IsNullOrEmpty(link) || !Uri.TryCreate(link, UriKind.Absolute, out d)) return false;
+            if (!(d.Scheme == "hwlbrowser" || (d.Scheme == "https" && d.Host == "net.chausima.com"))) return false;
+            string q = null, u = null;
+            foreach (var part in d.Query.TrimStart('?').Split('&'))
+            {
+                var kv = part.Split(new[] { '=' }, 2); if (kv.Length < 2) continue;
+                var v = Uri.UnescapeDataString(kv[1].Replace("+", " ")).Trim();
+                if (kv[0] == "q") q = v; else if (kv[0] == "u") u = v;
+            }
+            if (!string.IsNullOrEmpty(u)) { if (!Regex.IsMatch(u, "^https?://", RegexOptions.IgnoreCase)) u = "https://" + u; web.CoreWebView2.Navigate(homeUrl); if (AllowedNow(u)) web.CoreWebView2.Navigate(u); }
+            else if (!string.IsNullOrEmpty(q)) web.CoreWebView2.Navigate(homeUrl + "#q=" + Uri.EscapeDataString(q));
+            else web.CoreWebView2.Navigate(homeUrl);
+            return true;
         }
 
         void ShowAddress(string url)
@@ -129,7 +159,11 @@ namespace HwlBrowser
             Uri u;
             if (!Uri.TryCreate(url, UriKind.Absolute, out u) || (u.Scheme != "https" && u.Scheme != "http")) { Blocked(url, "HWL Browser only opens web pages."); return false; }
             var host = u.Host.ToLowerInvariant();
-            if (Trusted.IsMatch(host) || okUrls.Contains(url)) return true;
+            if (okUrls.Contains(url)) return true;
+            if (GoogleSearch.IsMatch(host) && u.AbsolutePath == "/search" && !Regex.IsMatch(u.Query, "[?&]safe=active"))
+            { web.CoreWebView2.Navigate(url + (url.Contains("?") ? "&" : "?") + "safe=active"); return false; }   // Google SafeSearch on
+            if (IsVideo(u)) { CheckThenOpen(url, host); return false; }
+            if (Trusted.IsMatch(host)) return true;
             string why;
             if (badHosts.TryGetValue(host, out why)) { Blocked(url, why); return false; }
             CheckThenOpen(url, host);
@@ -148,7 +182,7 @@ namespace HwlBrowser
                     var req = (HttpWebRequest)WebRequest.Create(CheckUrl);
                     req.Method = "POST"; req.ContentType = "application/json"; req.Timeout = 25000;
                     req.Headers["apikey"] = AnonKey; req.Headers["Authorization"] = "Bearer " + AnonKey; req.Headers["x-hwl-app"] = "hwl-browser/1.0-windows";
-                    var body = Encoding.UTF8.GetBytes("{\"url\":\"" + url.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"}");
+                    var body = Encoding.UTF8.GetBytes("{\"url\":\"" + url.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\",\"age\":15}");
                     using (var s = req.GetRequestStream()) s.Write(body, 0, body.Length);
                     try { using (var r = (HttpWebResponse)req.GetResponse()) using (var rd = new StreamReader(r.GetResponseStream())) return rd.ReadToEnd(); }
                     catch (WebException we) when (we.Response != null) { using (var rd = new StreamReader(we.Response.GetResponseStream())) return rd.ReadToEnd(); }
@@ -160,7 +194,7 @@ namespace HwlBrowser
             catch { }
             cover.Visible = false;
             if (ok) { okUrls.Add(url); web.CoreWebView2.Navigate(url); }
-            else { if (reason.Contains("isn't suitable")) badHosts[host] = reason; Blocked(url, reason); }
+            else { if (reason.Contains("isn't suitable") && !IsVideo(new Uri(url))) badHosts[host] = reason; Blocked(url, reason); }
         }
 
         void Blocked(string url, string why)

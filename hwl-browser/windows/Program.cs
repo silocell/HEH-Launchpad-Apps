@@ -14,9 +14,13 @@ namespace HwlBrowser
     {
         public static readonly string Home = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HWLBrowser");
 
+        public static string StartLink;
+
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
+            StartLink = args.Length > 0 ? args[0] : null;
+            Register();
             AppDomain.CurrentDomain.AssemblyResolve += LoadEmbedded;
             Directory.CreateDirectory(Home);
             Application.EnableVisualStyles();
@@ -26,6 +30,22 @@ namespace HwlBrowser
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         static void Run() { Application.Run(new MainForm(UnpackLoader())); }
+
+        // hwlbrowser:// links (from net.chausima.com) open this app; per user, no admin needed
+        static void Register()
+        {
+            try
+            {
+                var exe = Assembly.GetExecutingAssembly().Location;
+                using (var k = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Classes\hwlbrowser"))
+                {
+                    k.SetValue("", "URL:HWL Browser"); k.SetValue("URL Protocol", "");
+                    using (var i = k.CreateSubKey("DefaultIcon")) i.SetValue("", "\"" + exe + "\",0");
+                    using (var c = k.CreateSubKey(@"shell\open\command")) c.SetValue("", "\"" + exe + "\" \"%1\"");
+                }
+            }
+            catch { }
+        }
 
         static Assembly LoadEmbedded(object sender, ResolveEventArgs e)
         {

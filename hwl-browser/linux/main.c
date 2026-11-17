@@ -19,11 +19,28 @@ static SoupSession *soup;
 static char *home_url;
 static GHashTable *ok_urls, *bad_hosts;
 static gboolean fullscreen = FALSE;
+static char *start_link = NULL;
 
 static const char *TRUSTED[] = { "wikipedia.org", "wikimedia.org", "bbc.co.uk", "civilinitiatives.org", "chausima.com",
   "kiddle.co", "nasa.gov", "nhm.ac.uk", "britannica.com", "natgeokids.com", "mathsisfun.com", "gov.uk", "scratch.mit.edu",
-  "khanacademy.org", "developer.mozilla.org", "w3schools.com", "duckdns.org" };
+  "khanacademy.org", "developer.mozilla.org", "w3schools.com", "duckdns.org",
+  "youtube.com", "youtu.be", "youtube-nocookie.com", "google.com", "google.co.uk", "office.com", "microsoft365.com", "office365.com", "live.com", "microsoftonline.com", "sharepoint.com", "onedrive.com", "microsoft.com", "cloud.microsoft", "github.com",
+  "sparx-learning.com", "sparxmaths.uk", "sparxreader.com", "sparxmaths.com", "educake.co.uk", "senecalearning.com", "arbor.sc", "arbor-education.com", "wiktionary.org" };
 
+static gboolean ends_with_host(const char *host, const char *o_) {
+  size_t h = strlen(host), o = strlen(o_);
+  return g_ascii_strcasecmp(host, o_) == 0 || (h > o + 1 && host[h - o - 1] == '.' && g_ascii_strcasecmp(host + h - o, o_) == 0);
+}
+/* a single YouTube video: checked by the AI (judged like a "15" rating) even though YouTube itself is trusted */
+static gboolean is_video(const char *url) {
+  GUri *u = g_uri_parse(url, G_URI_FLAGS_ENCODED, NULL);
+  if (!u || !g_uri_get_host(u)) { if (u) g_uri_unref(u); return FALSE; }
+  const char *h = g_uri_get_host(u), *p = g_uri_get_path(u);
+  gboolean tube = ends_with_host(h, "youtube.com") || ends_with_host(h, "youtu.be") || ends_with_host(h, "youtube-nocookie.com");
+  gboolean v = tube && (ends_with_host(h, "youtu.be") || g_str_has_prefix(p, "/watch") || g_str_has_prefix(p, "/shorts/") || g_str_has_prefix(p, "/embed/") || g_str_has_prefix(p, "/live/"));
+  g_uri_unref(u);
+  return v;
+}
 static gboolean trusted(const char *host) {
   size_t h = strlen(host);
   for (guint i = 0; i < G_N_ELEMENTS(TRUSTED); i++) {
@@ -67,7 +84,7 @@ static void checked(GObject *src, GAsyncResult *res, gpointer data) {
   gtk_stack_set_visible_child_name(GTK_STACK(stack), "web");
   if (ok) { g_hash_table_add(ok_urls, g_strdup(c->url)); webkit_web_view_load_uri(web, c->url); }
   else {
-    if (strstr(why, "isn't suitable")) g_hash_table_insert(bad_hosts, g_strdup(c->host), g_strdup(why));
+    if (strstr(why, "isn't suitable") && !is_video(c->url)) g_hash_table_insert(bad_hosts, g_strdup(c->host), g_strdup(why));
     blocked(c->url, why);
   }
   g_free(why); g_free(c->url); g_free(c->host); g_object_unref(c->msg); g_free(c);
@@ -85,7 +102,7 @@ static void check_then_open(const char *url, const char *host) {
   soup_message_headers_append(h, "x-hwl-app", "hwl-browser/1.0-linux");
   GString *j = g_string_new("{\"url\":\"");
   for (const char *p = url; *p; p++) { if (*p == '"' || *p == '\\') g_string_append_c(j, '\\'); g_string_append_c(j, *p); }
-  g_string_append(j, "\"}");
+  g_string_append(j, "\",\"age\":15}");
   GBytes *body = g_string_free_to_bytes(j);
   soup_message_set_request_body_from_bytes(c->msg, "application/json", body);
   g_bytes_unref(body);
@@ -104,8 +121,15 @@ static gboolean allowed_now(const char *url) {
     return FALSE;
   }
   char *host = g_ascii_strdown(g_uri_get_host(u), -1);
+  const char *path = g_uri_get_path(u), *query = g_uri_get_query(u);
+  if ((ends_with_host(host, "google.com") || ends_with_host(host, "google.co.uk")) && g_strcmp0(path, "/search") == 0 &&
+      !(query && (g_str_has_prefix(query, "safe=active") || strstr(query, "&safe=active")))) {   /* Google SafeSearch on */
+    char *s2 = g_strconcat(url, query ? "&" : "?", "safe=active", NULL);
+    webkit_web_view_load_uri(web, s2); g_free(s2); g_free(host); g_uri_unref(u);
+    return FALSE;
+  }
   g_uri_unref(u);
-  gboolean go = trusted(host) || g_hash_table_contains(ok_urls, url);
+  gboolean go = g_hash_table_contains(ok_urls, url) || (!is_video(url) && trusted(host));
   if (!go) {
     const char *why = g_hash_table_lookup(bad_hosts, host);
     if (why) blocked(url, why); else check_then_open(url, host);
@@ -138,7 +162,20 @@ static void show_address(void) {
     gtk_entry_set_text(GTK_ENTRY(addr), t ? t : ""); g_free(t);
   } else gtk_entry_set_text(GTK_ENTRY(addr), url);
 }
-static void on_uri(GObject *o, GParamSpec *p, gpointer _) { show_address(); }
+static void on_uri(GObject *o, GParamSpec *p, gpointer _) {
+  show_address();
+  /* YouTube changes video without loading a new page: check those too */
+  const char *url = webkit_web_view_get_uri(web);
+  if (url && is_video(url) && !g_hash_table_contains(ok_urls, url) &&
+      g_strcmp0(gtk_stack_get_visible_child_name(GTK_STACK(stack)), "cover") != 0) {
+    char *keep = g_strdup(url);
+    webkit_web_view_load_uri(web, "about:blank");
+    GUri *u = g_uri_parse(keep, G_URI_FLAGS_ENCODED, NULL);
+    char *host = g_ascii_strdown(u && g_uri_get_host(u) ? g_uri_get_host(u) : "", -1);
+    check_then_open(keep, host);
+    g_free(host); if (u) g_uri_unref(u); g_free(keep);
+  }
+}
 static void on_title(GObject *o, GParamSpec *p, gpointer _) {
   const char *t = webkit_web_view_get_title(web);
   char *s = (t && *t) ? g_strdup_printf("%s - HWL Browser", t) : g_strdup("HWL Browser");
@@ -199,6 +236,29 @@ static char *find_home(void) {
   return uri;
 }
 
+/* hwlbrowser://open?q=words searches, ?u=address opens a website (after the usual check) */
+static gboolean open_link(const char *link) {
+  if (!link) return FALSE;
+  GUri *d = g_uri_parse(link, G_URI_FLAGS_ENCODED, NULL);
+  if (!d) return FALSE;
+  const char *sc = g_uri_get_scheme(d), *h = g_uri_get_host(d);
+  if (!(g_strcmp0(sc, "hwlbrowser") == 0 || (g_strcmp0(sc, "https") == 0 && g_strcmp0(h, "net.chausima.com") == 0))) { g_uri_unref(d); return FALSE; }
+  GHashTable *t = g_uri_get_query(d) ? g_uri_parse_params(g_uri_get_query(d), -1, "&", G_URI_PARAMS_WWW_FORM, NULL) : NULL;
+  const char *q = t ? g_hash_table_lookup(t, "q") : NULL, *u = t ? g_hash_table_lookup(t, "u") : NULL;
+  if (u && *u) {
+    char *full = g_regex_match_simple("^https?://", u, G_REGEX_CASELESS, 0) ? g_strdup(u) : g_strconcat("https://", u, NULL);
+    webkit_web_view_load_uri(web, home_url);
+    if (allowed_now(full)) webkit_web_view_load_uri(web, full);
+    g_free(full);
+  } else if (q && *q) {
+    char *e = g_uri_escape_string(q, NULL, FALSE), *s = g_strconcat(home_url, "#q=", e, NULL);
+    webkit_web_view_load_uri(web, s); g_free(e); g_free(s);
+  } else webkit_web_view_load_uri(web, home_url);
+  if (t) g_hash_table_unref(t);
+  g_uri_unref(d);
+  return TRUE;
+}
+
 static void activate(GtkApplication *app, gpointer _) {
   if (window) { gtk_window_present(GTK_WINDOW(window)); return; }
   home_url = find_home();
@@ -248,13 +308,14 @@ static void activate(GtkApplication *app, gpointer _) {
   gtk_container_add(GTK_CONTAINER(window), box);
   gtk_widget_show_all(window);
   gtk_stack_set_visible_child_name(GTK_STACK(stack), "web");
-  webkit_web_view_load_uri(web, home_url);
+  if (!open_link(start_link)) webkit_web_view_load_uri(web, home_url);
 }
 
 int main(int argc, char **argv) {
   GtkApplication *app = gtk_application_new("org.civilinitiatives.hwlbrowser", G_APPLICATION_FLAGS_NONE);
   g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
-  int r = g_application_run(G_APPLICATION(app), argc, argv);
+  if (argc > 1) start_link = argv[1];
+  int r = g_application_run(G_APPLICATION(app), 1, argv);
   g_object_unref(app);
   return r;
 }
