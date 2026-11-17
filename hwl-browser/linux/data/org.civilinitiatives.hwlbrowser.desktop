@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=HWL Browser
+GenericName=Web Browser
+Comment=A school-safe web browser from Homework Launchpad
+Exec=hwl-browser %u
+Icon=org.civilinitiatives.hwlbrowser
+Terminal=false
+Categories=Network;WebBrowser;Education;
+StartupWMClass=org.civilinitiatives.hwlbrowser

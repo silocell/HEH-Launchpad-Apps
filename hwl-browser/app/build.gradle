@@ -1,0 +1,26 @@
+plugins { id "com.android.application"; id "org.jetbrains.kotlin.android" }
+def ks = new Properties()
+def ksFile = rootProject.file("../android/keys/keystore.properties")
+if (ksFile.exists()) ks.load(new FileInputStream(ksFile))
+android {
+  namespace "org.civilinitiatives.hwlbrowser"
+  compileSdk 35
+  defaultConfig {
+    applicationId "org.civilinitiatives.hwlbrowser"
+    minSdk 24
+    targetSdk 35
+    versionCode 1
+    versionName "1.0"
+    buildConfigField "String", "ANON_KEY", "\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyODMyMjkwLCJleHAiOjIxMDgxOTIyOTB9.7gFhQa5RBwVtiOPLO7Qf2-aVEbkd5xgpLiN1J06Gybo\""
+  }
+  buildFeatures { buildConfig true }
+  signingConfigs {
+    release {   // your own key, kept on your computer only (never committed)
+      storeFile rootProject.file("../android/keys/launchpad-release.jks")
+      storePassword ks["storePassword"]; keyAlias ks["keyAlias"]; keyPassword ks["keyPassword"]
+    }
+  }
+  buildTypes { release { minifyEnabled false; signingConfig ksFile.exists() ? signingConfigs.release : signingConfigs.debug } }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+  kotlinOptions { jvmTarget = "17" }
+}

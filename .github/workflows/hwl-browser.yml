@@ -1,0 +1,62 @@
+name: Build HWL Browser
+on:
+  push:
+    branches: [main]
+    paths: ["hwl-browser/**", ".github/workflows/hwl-browser.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17" }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.9" }
+      - name: APK
+        working-directory: hwl-browser
+        run: gradle assembleRelease --no-daemon && mkdir -p ../out && cp app/build/outputs/apk/release/app-release.apk ../out/HWLBrowser.apk
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: hwl-android, path: out/, if-no-files-found: ignore }
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Packages
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev libgtk-3-dev libfuse2 file
+      - name: deb + AppImage
+        run: OUT=$PWD/out sh hwl-browser/linux/package.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: hwl-linux, path: out/, if-no-files-found: ignore }
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: EXE
+        working-directory: hwl-browser/windows
+        run: dotnet build -c Release
+      - shell: pwsh
+        run: New-Item -ItemType Directory out -Force | Out-Null; Copy-Item hwl-browser\windows\bin\Release\net48\HWLBrowser.exe out\
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: hwl-windows, path: out/, if-no-files-found: ignore }
+  publish:
+    needs: [android, linux, windows]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: got }
+      - name: Push to the hwl-builds branch
+        run: |
+          mkdir pub && cd pub && git init -q -b hwl-builds
+          find ../got -type f -exec cp {} . \;
+          echo "Run ${{ github.run_id }} for ${{ github.sha }}: android=${{ needs.android.result }} linux=${{ needs.linux.result }} windows=${{ needs.windows.result }}" > STATUS.txt
+          ls -la
+          git config user.name "build bot"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -qm "HWL Browser builds for ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" hwl-builds
