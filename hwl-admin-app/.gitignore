@@ -1,0 +1,9 @@
+build/
+app/build/
+.gradle/
+local.properties
+*.keystore
+*.jks
+linux/hwl-browser
+windows/bin/
+windows/obj/
