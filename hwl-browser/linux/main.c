@@ -199,7 +199,8 @@ static void go(GtkEntry *e, gpointer _) {
 }
 
 static void back(GtkButton *b, gpointer _) { if (webkit_web_view_can_go_back(web)) webkit_web_view_go_back(web); }
-static void home(GtkButton *b, gpointer _) { webkit_web_view_load_uri(web, home_url); }
+#define NEW_TAB "https://chausima.com/"   /* start page, Home button and new tabs; searches still use home_url */
+static void home(GtkButton *b, gpointer _) { webkit_web_view_load_uri(web, NEW_TAB); }
 static void reload(GtkButton *b, gpointer _) { webkit_web_view_reload(web); }
 static void toggle_full(void) { fullscreen = !fullscreen; if (fullscreen) gtk_window_fullscreen(GTK_WINDOW(window)); else gtk_window_unfullscreen(GTK_WINDOW(window)); }
 static void full(GtkButton *b, gpointer _) { toggle_full(); }
@@ -253,7 +254,7 @@ static gboolean open_link(const char *link) {
   } else if (q && *q) {
     char *e = g_uri_escape_string(q, NULL, FALSE), *s = g_strconcat(home_url, "#q=", e, NULL);
     webkit_web_view_load_uri(web, s); g_free(e); g_free(s);
-  } else webkit_web_view_load_uri(web, home_url);
+  } else webkit_web_view_load_uri(web, NEW_TAB);
   if (t) g_hash_table_unref(t);
   g_uri_unref(d);
   return TRUE;
@@ -308,7 +309,7 @@ static void activate(GtkApplication *app, gpointer _) {
   gtk_container_add(GTK_CONTAINER(window), box);
   gtk_widget_show_all(window);
   gtk_stack_set_visible_child_name(GTK_STACK(stack), "web");
-  if (!open_link(start_link)) webkit_web_view_load_uri(web, home_url);
+  if (!open_link(start_link)) webkit_web_view_load_uri(web, NEW_TAB);
 }
 
 int main(int argc, char **argv) {

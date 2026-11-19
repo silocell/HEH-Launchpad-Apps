@@ -40,7 +40,8 @@ class MainActivity : Activity() {
     private lateinit var bar: ProgressBar
     private lateinit var cover: TextView
 
-    private val home = "file:///android_asset/home.html"
+    private val home = "file:///android_asset/home.html"   // the built-in search page
+    private val newTab = "https://chausima.com/"           // start page, Home button and new tabs
     private val check = "https://hehs-live.duckdns.org/functions/v1/linkcheck"
     private val trusted = Regex(
         "(^|\\.)(wikipedia\\.org|wikimedia\\.org|bbc\\.co\\.uk|civilinitiatives\\.org|chausima\\.com|kiddle\\.co|nasa\\.gov|" +
@@ -81,7 +82,7 @@ class MainActivity : Activity() {
             setOnClickListener { act() }
         }
         top.addView(btn("←", "Back") { if (web.canGoBack()) web.goBack() })
-        top.addView(btn("⌂", "Home") { web.loadUrl(home) })
+        top.addView(btn("⌂", "Home") { web.loadUrl(newTab) })
         addr = EditText(this).apply {
             hint = "Search or type a web address"; textSize = 15f; isSingleLine = true
             imeOptions = EditorInfo.IME_ACTION_GO; inputType = android.text.InputType.TYPE_TEXT_VARIATION_URI
@@ -141,7 +142,7 @@ class MainActivity : Activity() {
                 }
             }
         }
-        if (saved != null) web.restoreState(saved) else if (!openLink(intent?.data)) web.loadUrl(home)
+        if (saved != null) web.restoreState(saved) else if (!openLink(intent?.data)) web.loadUrl(newTab)
     }
 
     override fun onNewIntent(i: android.content.Intent) { super.onNewIntent(i); openLink(i.data) }
@@ -157,7 +158,7 @@ class MainActivity : Activity() {
         when {
             u.isNotEmpty() -> open(if (Regex("^https?://", RegexOption.IGNORE_CASE).containsMatchIn(u)) u else "https://$u")
             q.isNotEmpty() -> web.loadUrl(home + "#q=" + URLEncoder.encode(q, "UTF-8").replace("+", "%20"))
-            else -> web.loadUrl(home)
+            else -> web.loadUrl(newTab)
         }
         return true
     }

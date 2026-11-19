@@ -33,6 +33,7 @@ namespace HwlBrowser
         readonly HashSet<string> okUrls = new HashSet<string>();
         readonly Dictionary<string, string> badHosts = new Dictionary<string, string>();
         string homeFile, homeUrl;
+        const string NewTab = "https://chausima.com/";   // start page, Home button and new tabs; searches still use homeUrl
 
         public MainForm(string loaderDir)
         {
@@ -57,7 +58,7 @@ namespace HwlBrowser
                 b.FlatAppearance.BorderSize = 0; new ToolTip().SetToolTip(b, tip); b.Click += (s, e) => a(); return b;
             }
             bar.Controls.Add(B("←", "Back", () => { if (web.CanGoBack) web.GoBack(); }), 0, 0);
-            bar.Controls.Add(B("⌂", "Home", () => web.CoreWebView2?.Navigate(homeUrl)), 1, 0);
+            bar.Controls.Add(B("⌂", "Home", () => web.CoreWebView2?.Navigate(NewTab)), 1, 0);
             addr.Dock = DockStyle.Fill; addr.Font = new Font("Segoe UI", 11.5f); addr.Margin = new Padding(6, 5, 6, 0);
             addr.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; Go(addr.Text); } };
             bar.Controls.Add(addr, 2, 0);
@@ -107,7 +108,7 @@ namespace HwlBrowser
                 { var src = core.Source; core.NavigateToString("<!doctype html><body></body>"); CheckThenOpen(src, su.Host.ToLowerInvariant()); }
             };
             core.DocumentTitleChanged += (s, e) => Text = (string.IsNullOrEmpty(core.DocumentTitle) ? "" : core.DocumentTitle + " - ") + "HWL Browser";
-            if (!OpenLink(Program.StartLink)) core.Navigate(homeUrl);
+            if (!OpenLink(Program.StartLink)) core.Navigate(NewTab);
         }
 
         // hwlbrowser://open?q=words searches, ?u=address opens a website (after the usual check)
@@ -125,7 +126,7 @@ namespace HwlBrowser
             }
             if (!string.IsNullOrEmpty(u)) { if (!Regex.IsMatch(u, "^https?://", RegexOptions.IgnoreCase)) u = "https://" + u; web.CoreWebView2.Navigate(homeUrl); if (AllowedNow(u)) web.CoreWebView2.Navigate(u); }
             else if (!string.IsNullOrEmpty(q)) web.CoreWebView2.Navigate(homeUrl + "#q=" + Uri.EscapeDataString(q));
-            else web.CoreWebView2.Navigate(homeUrl);
+            else web.CoreWebView2.Navigate(NewTab);
             return true;
         }
 
